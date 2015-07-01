@@ -55,3 +55,7 @@ docs/_build/
 
 # PyBuilder
 target/
+
+/endtoend.py
+/juices.py
+/.DS_Store

@@ -119,7 +119,7 @@ def get_artwork(driver, metadata):
 				art_url = url_func(artwork_cont)
 				ext = art_url[-3:]
 				file_key = song_dict["file_key"]
-				file_path = d.root_directory + 'songs/art_dump/' + file_key + '.' + ext
+				file_path = './art_dump/' + file_key + '.' + ext
 				urllib.urlretrieve(art_url, file_path)
 				song_dict['art_url'] = str(art_url)
 				song_dict['local_art'] = str(file_path)

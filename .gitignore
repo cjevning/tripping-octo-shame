@@ -59,3 +59,4 @@ target/
 /endtoend.py
 /juices.py
 /.DS_Store
+/defaults.cfg

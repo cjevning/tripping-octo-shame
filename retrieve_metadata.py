@@ -10,6 +10,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
+from mutagen.mp3 import MP3
+from mutagen.id3 import ID3, APIC, error
+from mutagen.easyid3 import EasyID3
+from mutagen import File
 
 amazon_dict = {'space_delim':'+', 'search_url':'http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Ddigital-music&field-keywords=',
 			   'table_class':'mp3Tracks', 'by_method':By.ID, 'no_results_locator':'noResultsTitle', 'result_class':'result',
@@ -19,12 +23,52 @@ soundcloud_dict = {'space_delim':'%20', 'search_url':'https://soundcloud.com/sea
 				   'title_locator': 'soundTitle__title', 'artist_locator': 'soundTitle__username'}
 
 
-def get_metadata_for_song(song_name, driver):
+def get_metadata_for_song(song_path, song_name, driver):
 	amazon_song_info = get_song_info(driver, song_name, 'amazon')
 	soundcloud_song_info = get_song_info(driver, song_name, 'soundcloud')
 	all_song_info = amazon_song_info + soundcloud_song_info
 	all_info_w_artwork = get_artwork(driver, all_song_info)
-	return all_info_w_artwork
+	current_song_info = get_current_metadata(song_path, song_name)
+	return current_song_info + all_info_w_artwork
+
+def get_current_metadata(song_path, song_name):
+	try:
+		tags = ID3(song_path)
+	except Exception,e:
+		print 'couldn`t get tags on the song for this reason:'
+		print e
+		print 'skipping'
+		return []
+	try:
+		title = tags["TIT2"]
+	except:
+		title = ''
+	try:
+		artist = tags["TPE2"]
+	except:
+		artist = ''
+	try:
+		album = tags["TALB"]
+	except:
+		album = ''
+	mfile = File(song_path)
+	apic = mfile.tags['APIC:']
+	mime_sp = apic.mime.split('/')
+	ext = mime_sp[len(mime_sp) - 1]
+
+	artwork = apic.data # access APIC frame and grab the image
+	file_key = song_name + '_default'
+
+	import pdb
+	pdb.set_trace()
+
+	file_path = './art_dump/' + file_key + '.' + ext
+
+	
+	with open(file_path, 'wb') as img:
+		img.write(artwork)
+
+	song_dict = {'title':title, 'artist':artist, 'album':album, 'local_art':file_path, 'file_key':file_key}
 
 
 def get_song_info(driver, name, source):
@@ -77,12 +121,11 @@ def get_song_info(driver, name, source):
 				promoted = row.find_element_by_class_name('promotedBadge')
 				print 'yep, promoted link. skipping!'
 			except:
-				print 'not a promoted link'
 				try:
 					user = row.find_element_by_class_name('userStats')
 					print 'yep, user link. skipping!'
 				except:
-					print 'not a user link either, not sure what`s wrong'
+					print 'doesn`t seem to be promoted or user link, not sure what`s wrong'
 	return results
 
 
@@ -153,8 +196,6 @@ def write_html_for_song(file_path, data):
         myFile.write('</table>')
         myFile.write('</body>')
         myFile.write('</html>')
-
-
 
 
 

@@ -60,3 +60,4 @@ target/
 /juices.py
 /.DS_Store
 /defaults.cfg
+art_dump/

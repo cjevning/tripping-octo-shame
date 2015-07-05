@@ -1,4 +1,6 @@
 import sys
+import logger_setup as ls
+logger = ls.get_logger(__name__)
 
 def parse_file(file_path):
 	to_return = []
@@ -16,16 +18,11 @@ def read_command():
 		print "you need to specify either a file name or a song"
 
 	songs = []
-	start_of_non_flags = 1
-	flag = sys.argv[1]
-	if flag.startswith('-allow'):
-		allow_quality_exceptions = True
-		start_of_non_flags = 2
-	potential_file_name = sys.argv[start_of_non_flags]
+	potential_file_name = sys.argv[1]
 	if potential_file_name.endswith('.txt'):
-		print 'text file with songs found, parsing'
+		logger.info('text file with songs found, parsing')
 		songs = parse_file(potential_file_name)
 	else:
-		print 'no text file given, treating args as song title'
-		songs.append(' '.join(sys.argv[start_of_non_flags:]))
+		logger.info('no text file given, treating args as song title')
+		songs.append(' '.join(sys.argv[1:]))
 	return songs

@@ -18,7 +18,8 @@ if __name__ == "__main__":
 	section = 'defaults'
 	config.add_section(section)
 	config.set(section, 'rwqe', str(retry_with_quality_exceptions))
-	config.set(section, 'root', sdir.rstrip('/'))
+	config.set(section, 'directory', sdir.rstrip('/'))
+	config.set(section, 'root', os.getcwd())
 	with open('./defaults.cfg', 'wb') as configfile:
 		config.write(configfile)
 	

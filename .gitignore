@@ -61,3 +61,5 @@ target/
 /.DS_Store
 /defaults.cfg
 art_dump/
+/downloaded.txt
+/failed.txt

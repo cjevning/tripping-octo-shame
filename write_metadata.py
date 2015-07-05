@@ -1,10 +1,10 @@
 from selenium import webdriver
 import eyed3
 import sys
-import pdb
 from mutagen.mp3 import MP3
-from mutagen.id3 import ID3, APIC, error
+from mutagen.id3 import ID3, APIC, error, ID3NoHeaderError
 from mutagen.easyid3 import EasyID3
+import mutagen
 
 
 def write_data(options, song):
@@ -16,28 +16,33 @@ def write_data(options, song):
 		audio.add_tags()
 	except error:
 		pass
-	audio.tags.add(
-	    APIC(
-	        encoding=3, # 3 is for utf-8
-	        mime='image/jpg', # image/jpeg or image/png
-	        type=3, # 3 is for the cover image
-	        desc=u'Cover',
-	        data=open(options[3]).read()
-	    )
-	)
+	if options[3] is not None:
+		audio.tags.add(
+		    APIC(
+		        encoding=3, # 3 is for utf-8
+		        mime='image/jpg', # image/jpeg or image/png
+		        type=3, # 3 is for the cover image
+		        desc=u'Cover',
+		        data=open(options[3]).read()
+		    )
+		)
 	audio.save()
 	try:
 		meta = EasyID3(song)
-	except mutagen.id3.ID3NoHeaderError:
-		meta = mutagen.File(filePath, easy=True)
+	except ID3NoHeaderError:
+		meta = mutagen.File(song, easy=True)
 		meta.add_tags()
-	meta['title'] = options[0]
-	meta['artist'] = options[1]
-	if 'soundcloud result' in options[2]:
-		meta['album'] = ''	
-	else:
-		meta['album'] = options[2]
+	if options[0] is not None:
+		meta['title'] = options[0]
+	if options[1] is not None:
+		meta['artist'] = options[1]
+	if options[2] is not None:
+		if 'soundcloud result' in options[2]:
+			meta['album'] = 'Promo Singles'	
+		else:
+			meta['album'] = options[2]
 
+	meta['website'] = 'connerjevning.com'
 	meta.save()
 
 def collect_options(song_name):
@@ -53,13 +58,14 @@ def collect_options(song_name):
 		for i in range(0, list_len):
 			curr_num = option_list[i]
 			if curr_num.isdigit(): 
-				if i < list_len-2 and not option_list[i+1].isdigit():
+				if i < list_len-2 and option_list[i+1].isalpha():
 					to_return.append(curr_num + 'e')
 				else:
 					to_return.append(curr_num)
+			elif curr_num == '-':
+				to_return.append(curr_num)
 	else:
 		to_return = option_list
-	print to_return
 	return to_return
 
 def edit_prop(thing_to_edit):
@@ -71,13 +77,15 @@ def get_data(options, data):
 	title = None
 	artist = None
 	album = None
-	art_url = None
+	local_art = None
 	for i in range(0, 4):
 		option = options[i]
 		edit = False
 		if len(option) > 1:
 			edit = True
 			option = option[0]
+		if option == '-':
+			continue
 		data_to_use = data[int(option)]
 		if i is 0:
 			title = data_to_use['title']

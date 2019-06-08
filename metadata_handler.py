@@ -7,7 +7,7 @@ import os
 from selenium import webdriver
 
 def handle_metadata(song_path, root, driver):
-	splits = song_path.split('/')
+	splits = song_path.split('\\')
 	name = splits[len(splits) - 1].rstrip('.mp3')
 	data = rm.get_metadata_for_song(song_path, name, driver)
 	file_path = root + '/html_pages/' + name + '.html'
@@ -17,14 +17,18 @@ def handle_metadata(song_path, root, driver):
 	data_to_use = wm.get_data(choices, data)
 	wm.write_data(data_to_use, song_path)
 
-def handle_multiple(dir_path, root_path, driver):
+def handle_multiple(dir_path, root_path, driver, use_metadata = False):
 	count = 0
+
 	for root, dirs, files in os.walk(dir_path):
 		for file in files:
 			if file.endswith(".mp3"):
 				file_path = os.path.join(root, file)
 				if not rm.already_marked(file_path):
-					handle_metadata(file_path, root_path, driver)
+					if not use_metadata:
+						handle_metadata(file_path, root_path, driver)
+					else:
+						handle_with_current(file_path, root_path, driver)
 
 if __name__ == "__main__":
 	conf = pc.get_config()
@@ -38,9 +42,13 @@ if __name__ == "__main__":
 	cf.clear(root + '/html_pages')
 	
 	logger.info('starting chrome')
-	driver = webdriver.Chrome()
+	chop = webdriver.ChromeOptions()
+	chop.add_extension('./AdBlock_v2.35.crx')
+	driver = webdriver.Chrome(chrome_options = chop)
 	dir_path = sys.argv[1]
-	handle_multiple(driver, dir_path, root)
+	#import pdb
+	#pdb.set_trace()
+	handle_multiple(dir_path, root, driver)
 	driver.quit()
 
 	cf.clear(root + '/art_dump')

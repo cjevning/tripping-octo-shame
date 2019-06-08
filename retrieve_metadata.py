@@ -45,7 +45,7 @@ def get_current_metadata(song_path, song_name):
 	except:
 		title = ''
 	try:
-		artist = tags["TPE2"].text[0]
+		artist = tags["TPE1"].text[0]
 	except:
 		artist = ''
 	try:
@@ -55,6 +55,7 @@ def get_current_metadata(song_path, song_name):
 	mfile = File(song_path)
 	file_key = song_name + '_default'
 	file_path = '-'
+	file_url = ''
 	try:
 		apic = mfile.tags['APIC:']
 		mime_sp = apic.mime.split('/')
@@ -62,16 +63,20 @@ def get_current_metadata(song_path, song_name):
 
 		artwork = apic.data # access APIC frame and grab the image
 		
+		cwd = os.getcwd()
+		file_path = cwd + '/art_dump/' + file_key + '.' + ext
 
-		file_path = './art_dump/' + file_key + '.' + ext
+		file_url = 'file://' + file_path
 
 		
 		with open(file_path, 'wb') as img:
 			img.write(artwork)
 	except Exception,e:
-		logger.warn('failed to get artwork attached to mp3, probably doesn`t have any')
+		logger.warn('failed to get artwork attached to mp3, probably doesn`t have any. here`s the exception:')
+		logger.warn(e)
 
-	song_dict = {'title':title, 'artist':artist, 'album':album, 'art_url':file_path, 'file_key':file_key}
+
+	song_dict = {'title':title, 'artist':artist, 'album':album, 'local_art':file_path, 'art_url':file_url, 'file_key':file_key}
 	return [song_dict]
 
 
@@ -88,7 +93,8 @@ def get_song_info(driver, name, source):
 	except TimeoutException:
 		logger.error("took too long to find results table, checking for failed search...")
 		try:
-			no_res = table.findElement(props['by_method'], props['no_results_locator'])
+			thing = driver if source is 'amazon' else table
+			no_res = thing.findElement(props['by_method'], props['no_results_locator'])
 			logger.info("yep, no results")
 		except Exception,e: 
 			logger.info("strange, couldn`t find failed search page either; slow internet maybe?")
@@ -107,10 +113,11 @@ def get_song_info(driver, name, source):
 			break
 		try:
 			title_elem = row.find_element_by_class_name(props['title_locator'])
-			title = str(title_elem.text)
-			artist = str(row.find_element_by_class_name(props['artist_locator']).text)
+			title = title_elem.text.encode('utf8') #str(title_elem.text)
+			title = re.sub('/', '', title)
+			artist = row.find_element_by_class_name(props['artist_locator']).text.encode('utf8') #str(row.find_element_by_class_name(props['artist_locator']).text)
 			if source is 'amazon': 
-				album = str(row.find_element_by_class_name(props['album_locator']).text)
+				album = row.find_element_by_class_name(props['album_locator']).text.encode('utf8') #str(row.find_element_by_class_name(props['album_locator']).text)
 			else:
 				album = 'soundcloud result, album unknown'
 			details_url = str(title_elem.get_attribute('href'))
@@ -164,11 +171,11 @@ def get_artwork(driver, metadata):
 				artwork_cont = WebDriverWait(driver, 10).until(EC.presence_of_element_located((by_method, locator)))
 				art_url = url_func(artwork_cont)
 				ext = art_url[-3:]
-				file_key = song_dict["file_key"]
-				file_path = './art_dump/' + file_key + '.' + ext
+				file_key = song_dict["file_key"].decode('utf8')
+				file_path = os.getcwd() + '\\art_dump\\' + file_key + '.' + ext
 				urllib.urlretrieve(art_url, file_path)
 				song_dict['art_url'] = str(art_url)
-				song_dict['local_art'] = str(file_path)
+				song_dict['local_art'] = file_path.encode('utf8')
 				with_arturls.append(song_dict)
 			except Exception,e: 
 				logger.error('failed to save artwork for some reason:')

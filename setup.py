@@ -10,6 +10,7 @@ if __name__ == "__main__":
 			os.makedirs(ndir)
 	sdir = raw_input('enter directory where music files will be saved:')
 	allow = raw_input('retry and allow qualtiy exceptions if mp3 not found? y or n:')
+	songfile = raw_input('enter the filename containing links:')
 	if allow.lower() in ['y', 'yes', 'true']:
 		retry_with_quality_exceptions = True
 	else:
@@ -20,6 +21,7 @@ if __name__ == "__main__":
 	config.set(section, 'rwqe', str(retry_with_quality_exceptions))
 	config.set(section, 'directory', sdir.rstrip('/'))
 	config.set(section, 'root', os.getcwd())
+	config.set(section, 'songfile', songfile)
 	with open('./defaults.cfg', 'wb') as configfile:
 		config.write(configfile)
 	
